@@ -2,9 +2,9 @@
 
 int main(int argc, char const *argv[])
 {
-    int a = 1;
-    scanf("%d", &a);
-    printf("a是%d\n", a);
+    int a = 97;
+    scanf("%c", &a);
+    printf("a是 %c\n", a);
 
     return 0;
 }

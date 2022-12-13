@@ -4,6 +4,6 @@ int main()
 {
     char c;
     c = getchar();
-    printf("c是 %c\n", c);
+    printf("c是 %d\n", c);
     return 0;
 }
