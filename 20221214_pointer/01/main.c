@@ -12,3 +12,4 @@ int main() {
     func(add, 10, 11);
     return 0;
 }
+
