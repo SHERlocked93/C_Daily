@@ -1,18 +1,12 @@
 #include "stdio.h"
 
-typedef struct nodeData {
-    int age;
-    char name[20];
-} node;
-
 int main() {
-    node n = {10, "hello"};
-    node *p = &n;
+    int a = 10;
+    int b = 20;
+    int *const aa = &a;     // 指针常量：定义的时候必须要初始化，不能改变指向，可以改变指向的内容
+    const int *bb = &b;     // 常量指针：定义不用初始化，能改变指向，指向的内容不能被修改
     
-    // 结构体指针，使用->访问指向的结构体的属性
-    p->age = 15;
-    
-    printf("%d\n", n.age);
+    printf("%p \n%p", aa, bb);
     
     return 0;
 }
