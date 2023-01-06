@@ -1,5 +1,6 @@
 #include "stdio.h"
 #include "string.h"
+#include "stdlib.h"
 #include "link.h"
 
 // 链表头
@@ -30,8 +31,8 @@ int main() {
             printf("输入需要插入的学生信息，num name score\n");
             STU tmp;
             scanf("%d %s %f", &tmp.num, tmp.name, &tmp.score);
-    
-           head= insert_link(head, tmp);
+            
+            //head = insert_link(head, tmp);
         } else if (strcmp(cmd, "print") == 0) {
             printf("-------链表遍历-------\n");
         } else if (strcmp(cmd, "search") == 0) {
