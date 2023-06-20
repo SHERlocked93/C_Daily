@@ -1,3 +1,4 @@
+// 单个识别
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
@@ -52,7 +53,6 @@ int main(int argc, char** argv)
         }
     }
 
-    // 释放摄像头并关闭窗口
     cap.release();
     destroyAllWindows();
 
