@@ -1,4 +1,6 @@
 // 对摄像头识别人脸
+// g++ -std=c++17 main4.cpp -o main `pkg-config --libs opencv4`
+
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
@@ -60,7 +62,7 @@ int main()
             Mat image = imread(whole_img);
 
             Mat face = image(max_rect);
-            cout << "face.empty:" << face.empty() << endl;
+            if (face.empty()) continue;
             imwrite(face_img, face);
             cout << "Capture saved to " << face_img << endl;
 
