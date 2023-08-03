@@ -1,38 +1,30 @@
-#include <pthread.h>
-#include <stdio.h>
-
-#include <bitset>
-#include <ctime>
+#include <cstdio>
+#include <future>
 #include <iostream>
-#include <limits>
-#include <random>
-pthread_mutex_t mutex; // 定义互斥锁
+#include <thread>
 
-int count = 0;         // 共享变量
-void* increment(void* arg)
+using namespace std;
+
+int g_count = 0;
+// atomic<int> g_count{0};  // 可以用atomic解决这个情况
+
+/// \brief 线程函数
+/// \param n 循环次数
+void thread_func(int n)
 {
-    int i;
-    for (i = 0; i < 1000000; i++) {
-        pthread_mutex_lock(&mutex);   // 获得互斥锁
-        count++;                      // 访问共享变量
-        pthread_mutex_unlock(&mutex); // 释放互斥锁
+    for (int i = 0; i < n; ++i) {
+        g_count++;
+        // g_count = g_count + 1; // 原子操作不支持这种写法
     }
-    return NULL;
 }
 
-int main(void)
+int main()
 {
-    pthread_t tid1, tid2;
-    pthread_mutex_init(&mutex, NULL); // 初始化互斥锁
-
-    // 创建两个线程，分别对共享变量进行加1操作
-    pthread_create(&tid1, NULL, increment, NULL);
-    pthread_create(&tid2, NULL, increment, NULL);
-
-    // 等待两个线程运行结束
-    pthread_join(tid1, NULL);
-    pthread_join(tid2, NULL);
-
-    pthread_mutex_destroy(&mutex); // 销毁互斥锁
-    printf("count = %d\n", count);
+    future_status status;
+    thread t1(thread_func, 1000000);
+    thread t2(thread_func, 1000000);
+    
+    t1.join();
+    t2.join();
+    cout << "g_count:" << g_count << endl;
 }
