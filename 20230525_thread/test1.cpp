@@ -23,7 +23,7 @@ int main()
     future_status status;
     thread t1(thread_func, 1000000);
     thread t2(thread_func, 1000000);
-    
+
     t1.join();
     t2.join();
     cout << "g_count:" << g_count << endl;

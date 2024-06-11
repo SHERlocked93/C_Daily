@@ -5,6 +5,8 @@
 using namespace cv;
 using namespace std;
 
+// g++ -std=c++11 main.cpp -o testopencv `pkg-config --cflags --libs opencv4`
+
 int main(int argc, char** argv)
 {
     // 打开默认的摄像头
