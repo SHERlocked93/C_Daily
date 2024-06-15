@@ -6,14 +6,14 @@ namespace common_util {
 namespace thread_task {
 class SampleTaskArgs : public TaskWorkArgs {
  public:
-  int id;
+  std::string id;  // 唯一识别ID
 };
 }  // namespace thread_task
 }  // namespace common_util
 
 class AsyncTaskSamples {
  public:
-  AsyncTaskSamples();
+  AsyncTaskSamples() = default;
 
   void runSample();
 
