@@ -1,3 +1,7 @@
+# Google C/C++ Code Style settings
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+# Author: Kehan Xue, kehan.xue (at) gmail.com
+
 Language: Cpp
 BasedOnStyle: Google
 #AccessModifierOffset: -1
@@ -7,11 +11,11 @@ BasedOnStyle: Google
 #AllowAllArgumentsOnNextLine: true
 #AllowAllConstructorInitializersOnNextLine: true
 #AllowAllParametersOfDeclarationOnNextLine: false
-AllowShortBlocksOnASingleLine: Empty
+#AllowShortBlocksOnASingleLine: Empty
 #AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Inline
-AllowShortIfStatementsOnASingleLine: true
-AllowShortLambdasOnASingleLine: Inline
+#AllowShortFunctionsOnASingleLine: Inline
+#AllowShortIfStatementsOnASingleLine: true
+#AllowShortLambdasOnASingleLine: Inline
 #AllowShortLoopsOnASingleLine: false
 #AlwaysBreakAfterReturnType: None
 #AlwaysBreakTemplateDeclarations: Yes
@@ -38,7 +42,7 @@ BraceWrapping:
 #BreakBeforeTernaryOperators: true
 #BreakConstructorInitializers: BeforeColon
 #BreakInheritanceList: BeforeColon
-ColumnLimit: 200
+ColumnLimit: 150
 #CompactNamespaces: false
 #ContinuationIndentWidth: 4
 #Cpp11BracedListStyle: true

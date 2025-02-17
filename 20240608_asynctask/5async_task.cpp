@@ -12,7 +12,7 @@ namespace thread_task {
 class AsyncTask;
 class TaskWorkArgsBase {
  public:
-  TaskWorkArgsBase() = default;
+  explicit TaskWorkArgsBase(int interval_seconds = 0) : interval_seconds_(interval_seconds) {}
   virtual ~TaskWorkArgsBase() = default;
   TaskWorkArgsBase(const TaskWorkArgsBase&) = default;
   TaskWorkArgsBase& operator=(const TaskWorkArgsBase&) = default;
@@ -189,99 +189,114 @@ int main() {
   using namespace common_util::thread_task;
 
 #pragma region simple task
-  // 创建任务对象
-  AsyncTask simpleTask;
-
-  // 设置工作负载
-  simpleTask.setWorkLoad([](AsyncTask* task, const std::shared_ptr<TaskWorkArgsBase>& args) {
-    auto myArgs = std::static_pointer_cast<MyTaskArgs>(args);
-    auto result = std::make_shared<MyTaskResult>();
-
-    //    for (int i = 0; i <= 100; i += 20) {
-    //      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    //      TaskProcess process;
-    //      process.process = i;
-    //      process.message = "Progress: " + std::to_string(i) + "%";
-    //      task->reportProcess(process);
-    //
-    //      if (task->isCancellationRequested()) {
-    //        result->retVal = -1;
-    //        result->desp = "Task cancelled";
-    //        return result;
-    //      }
-    //    }
-
-    result->result = myArgs->data * 2;  // 假设计算任务是将输入数据乘以2
-    result->retVal_ = 0;
-    result->desp_ = "Task completed successfully";
-    return result;
-  });
-
-  simpleTask.setProcessHandler([](TaskProcessBase& process) { std::cout << process.message_ << std::endl; });
-
-  simpleTask.setTaskDoneHandler([](std::shared_ptr<TaskResultBase>& result) {
-    auto myResult = std::dynamic_pointer_cast<MyTaskResult>(result);
-    if (result->retVal_ == 0) {
-      std::cout << "Simple Task result: " << myResult->result << std::endl;
-    } else {
-      std::cout << "Simple Task error: " << result->desp_ << std::endl;
-    }
-  });
-  simpleTask.runAsync(std::make_shared<MyTaskArgs>(1));
-
-  simpleTask.setTaskDoneHandler([](std::shared_ptr<TaskResultBase>& result) {
-    auto myResult = std::dynamic_pointer_cast<MyTaskResult>(result);
-    if (result->retVal_ == 0) {
-      std::cout << "Simple Task result: " << myResult->result << std::endl;
-    } else {
-      std::cout << "Simple Task error: " << result->desp_ << std::endl;
-    }
-  });
+  //  // 创建任务对象
+  //  AsyncTask simpleTask;
+  //
+  //  // 设置工作负载
+  //  simpleTask.setWorkLoad([](AsyncTask* task, const std::shared_ptr<TaskWorkArgsBase>& args) {
+  //    auto myArgs = std::static_pointer_cast<MyTaskArgs>(args);
+  //    auto result = std::make_shared<MyTaskResult>();
+  //
+  //    //    for (int i = 0; i <= 100; i += 20) {
+  //    //      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  //    //      TaskProcess process;
+  //    //      process.process = i;
+  //    //      process.message = "Progress: " + std::to_string(i) + "%";
+  //    //      task->reportProcess(process);
+  //    //
+  //    //      if (task->isCancellationRequested()) {
+  //    //        result->retVal = -1;
+  //    //        result->desp = "Task cancelled";
+  //    //        return result;
+  //    //      }
+  //    //    }
+  //
+  //    result->result = myArgs->data * 2;  // 假设计算任务是将输入数据乘以2
+  //    result->retVal_ = 0;
+  //    result->desp_ = "Task completed successfully";
+  //    return result;
+  //  });
+  //
+  //  simpleTask.setProcessHandler([](TaskProcessBase& process) { std::cout << process.message_ << std::endl;
+  //  });
+  //
+  //  simpleTask.setTaskDoneHandler([](std::shared_ptr<TaskResultBase>& result) {
+  //    auto myResult = std::dynamic_pointer_cast<MyTaskResult>(result);
+  //    if (result->retVal_ == 0) {
+  //      std::cout << "Simple Task result: " << myResult->result << std::endl;
+  //    } else {
+  //      std::cout << "Simple Task error: " << result->desp_ << std::endl;
+  //    }
+  //  });
+  //  simpleTask.runAsync(std::make_shared<MyTaskArgs>(1));
+  //
+  //  simpleTask.setTaskDoneHandler([](std::shared_ptr<TaskResultBase>& result) {
+  //    auto myResult = std::dynamic_pointer_cast<MyTaskResult>(result);
+  //    if (result->retVal_ == 0) {
+  //      std::cout << "Simple Task result: " << myResult->result << std::endl;
+  //    } else {
+  //      std::cout << "Simple Task error: " << result->desp_ << std::endl;
+  //    }
+  //  });
 
 #pragma endregion
 
 #pragma region loop task
-  AsyncTask loopTask;
-
-  loopTask.setWorkLoad([](AsyncTask* task, const std::shared_ptr<TaskWorkArgsBase>& args) {
-    auto myArgs = std::static_pointer_cast<MyTaskArgs>(args);
-
-    std::clog << "[loopTask] loopTask start! id:" << std::this_thread::get_id() << std::endl;
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    myArgs->data += 35;
-    std::clog << "[loopTask] loopTask is working... data:" << myArgs->data << std::endl;
-
-    auto result = std::make_shared<MyTaskResult>();
-    result->result = myArgs->data;
-    result->retVal_ = 0;
-    result->desp_ = " Loop task already done!";
-
-    std::clog << "[loopTask] loopTask end!  id:" << std::this_thread::get_id() << std::endl;
-    return result;
-  });
-
-  loopTask.setTaskDoneHandler([](std::shared_ptr<TaskResultBase>& result) {
-    auto myResult = std::dynamic_pointer_cast<MyTaskResult>(result);
-    if (result->retVal_ == 0) {
-      std::cout << "Loop Task result: " << myResult->result << std::endl;
-    } else {
-      std::cout << "Loop Task error: " << result->desp_ << std::endl;
-    }
-  });
-
-  loopTask.runAsync(std::make_shared<MyTaskArgs>(10, 1));
-
-  auto loopTaskResult = loopTask.getResult();
-  if (loopTaskResult) {
-    std::cout << "Final Loop Task Result: retVal = " << loopTaskResult->retVal_
-              << ", desp = " << loopTaskResult->desp_ << std::endl;
-  } else {
-    std::cout << "Failed to Recv Loop Task Result!" << std::endl;
-  }
+//  AsyncTask loopTask;
+//
+//  loopTask.setWorkLoad([](AsyncTask* task, const std::shared_ptr<TaskWorkArgsBase>& args) {
+//    auto myArgs = std::static_pointer_cast<MyTaskArgs>(args);
+//
+//    std::clog << "[loopTask] loopTask start! id:" << std::this_thread::get_id() << std::endl;
+//
+//    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//    myArgs->data += 35;
+//    std::clog << "[loopTask] loopTask is working... data:" << myArgs->data << std::endl;
+//
+//    auto result = std::make_shared<MyTaskResult>();
+//    result->result = myArgs->data;
+//    result->retVal_ = 0;
+//    result->desp_ = " Loop task already done!";
+//
+//    std::clog << "[loopTask] loopTask end!  id:" << std::this_thread::get_id() << std::endl;
+//    return result;
+//  });
+//
+//  loopTask.setTaskDoneHandler([](std::shared_ptr<TaskResultBase>& result) {
+//    auto myResult = std::dynamic_pointer_cast<MyTaskResult>(result);
+//    if (result->retVal_ == 0) {
+//      std::cout << "Loop Task result: " << myResult->result << std::endl;
+//    } else {
+//      std::cout << "Loop Task error: " << result->desp_ << std::endl;
+//    }
+//  });
+//
+//  loopTask.runAsync(std::make_shared<MyTaskArgs>(10, 1));
+//
+//  auto loopTaskResult = loopTask.getResult();
+//  if (loopTaskResult) {
+//    std::cout << "Final Loop Task Result: retVal = " << loopTaskResult->retVal_
+//              << ", desp = " << loopTaskResult->desp_ << std::endl;
+//  } else {
+//    std::cout << "Failed to Recv Loop Task Result!" << std::endl;
+//  }
 #pragma endregion
 
-  std::this_thread::sleep_for(std::chrono::seconds(5));
+  using namespace common_util::thread_task;
+
+  // if (!conn_state_)  return;
+  AsyncTask uploadTransLoopTask;
+
+  uploadTransLoopTask.setWorkLoad([](AsyncTask* task, const std::shared_ptr<TaskWorkArgsBase>& args) {
+    std::cout << "setWorkLoad" << std::endl;
+    return std::make_shared<TaskResultBase>();
+  });
+  uploadTransLoopTask.setTaskDoneHandler(
+      [](std::shared_ptr<TaskResultBase>& result) { std::cout << "done" << std::endl; });
+
+  uploadTransLoopTask.runAsync(std::make_shared<TaskWorkArgsBase>(1));
+
+  std::this_thread::sleep_for(std::chrono::seconds(10));
 
   return 0;
 }

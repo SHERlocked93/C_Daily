@@ -58,13 +58,12 @@ void checkScMsgWorker() {
 }
 
 // 发送线程函数
-void sendCommand(const std::string& command, const std::string& uniqueID, int timeoutSeconds, SendCb cb) {
+void registCb(const std::string& uniqueID, int timeoutSeconds, SendCb cb) {
   {
     std::lock_guard<std::mutex> lock_cb(cb_mtx);
     cb_map[uniqueID] = std::move(cb);
   }
   std::thread([=]() {
-    sendCommand(command);
     bool isTimeout = false;
     {
       std::unique_lock<std::mutex> lock_cv(cv_mtx);
@@ -118,14 +117,14 @@ int main() {
     std::cout << " >" << std::endl;
   };
 
-  sendCommand("command1", "uniqueID1", 3, printCmd);
-  sendCommand("command3", "uniqueID3", 3, printCmd);
-  sendCommand("command2", "uniqueID2", 3, printCmd);
-  sendCommand("command4", "uniqueID4", 3, printCmd);
-  sendCommand("command5", "uniqueID5", 3, printCmd);
-  sendCommand("command6", "uniqueID6", 3, printCmd);
-  sendCommand("command7", "uniqueID7", 3, printCmd);
-  sendCommand("command8", "uniqueID8", 3, printCmd);
+  registCb("uniqueID1", 3, printCmd);
+  registCb("uniqueID3", 3, printCmd);
+  registCb("uniqueID2", 3, printCmd);
+  registCb("uniqueID4", 3, printCmd);
+  registCb("uniqueID5", 3, printCmd);
+  registCb("uniqueID6", 3, printCmd);
+  registCb("uniqueID7", 3, printCmd);
+  registCb("uniqueID8", 3, printCmd);
 
   // 模拟接收消息
   std::thread receiver([] {
