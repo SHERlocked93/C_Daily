@@ -46,18 +46,6 @@ public:
 };
 int main()
 {
-    int* pArray = (int*)malloc(sizeof(int) * 5);
-    std::cout << "使用超過malloc分配的內存空間";
-    pArray[5] = 5; // 使用超過malloc分配的內存空間
-    free(pArray);
-    pArray[1] = 2; // 使用已經free的內存空間
-
-    MyClass* a = new MyClass(10);
-
-    int arr[10];
-    cout << arr << endl;
-    cout << &arr << endl;
-
     int i = 10;
     int& j = i;             // 正确：左值引用
                             //    int& k = i * 1;       // 错误：左值引用不能绑定右值
