@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-typedef std::function<void(const std::string&, const std::vector<unsigned char>&)> SendCb;
+using SendCb = std::function<void(const std::string&, const std::vector<unsigned char>&)>;
 
 std::mutex rq_mtx;  // recv_queue操作锁
 std::mutex cv_mtx;
@@ -24,7 +24,7 @@ void sendCommand(const std::string& command) { std::cout << " Sending command: "
 
 // 模拟接收消息并放入队列，此处代码无法更改，为外部代码
 void simulateReceiveMessage(const std::string& uniqueID, const std::vector<unsigned char>& message) {
-  std::lock_guard<std::mutex> lock(rq_mtx);
+  std::lock_guard lock(rq_mtx);
   recv_queue.emplace_back(uniqueID, message);
 }
 
@@ -34,14 +34,14 @@ void checkScMsgWorker() {
   while (true) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));  // 控制检查频率
 
-    std::unique_lock<std::mutex> lock_rq(rq_mtx);
+    std::unique_lock lock_rq(rq_mtx);
     if (recv_queue.empty()) continue;
     auto message = recv_queue.front();
     std::string uniqueID = message.first;
 
     // 没有对应唯一ID的回调，打印并丢弃
     {
-      std::lock_guard<std::mutex> lock_cb(cb_mtx);
+      std::lock_guard lock_cb(cb_mtx);
       if (!cb_map.contains(uniqueID)) {
         std::cout << "No callback for uniqueID: " << uniqueID << std::endl;
         recv_queue.pop_front();
@@ -51,7 +51,7 @@ void checkScMsgWorker() {
     lock_rq.unlock();
 
     {
-      std::lock_guard<std::mutex> lock_cv(cv_mtx);
+      std::lock_guard lock_cv(cv_mtx);
       cv_map[uniqueID].notify_all();
     }
   }
@@ -60,17 +60,16 @@ void checkScMsgWorker() {
 // 发送线程函数
 void registCb(const std::string& uniqueID, int timeoutSeconds, SendCb cb) {
   {
-    std::lock_guard<std::mutex> lock_cb(cb_mtx);
+    std::lock_guard lock_cb(cb_mtx);
     cb_map[uniqueID] = std::move(cb);
   }
   std::thread([=]() {
     bool isTimeout = false;
     {
-      std::unique_lock<std::mutex> lock_cv(cv_mtx);
+      std::unique_lock lock_cv(cv_mtx);
       isTimeout = !cv_map[uniqueID].wait_for(lock_cv, std::chrono::seconds(timeoutSeconds), [&] {
-        std::lock_guard<std::mutex> lock_rq(rq_mtx);
-        return std::any_of(recv_queue.begin(), recv_queue.end(),
-                           [&](const auto& item) { return item.first == uniqueID; });
+        std::lock_guard lock_rq(rq_mtx);
+        return std::any_of(recv_queue.begin(), recv_queue.end(), [&](const auto& item) { return item.first == uniqueID; });
       });
     }
 
@@ -80,9 +79,8 @@ void registCb(const std::string& uniqueID, int timeoutSeconds, SendCb cb) {
       // 获取并移除响应消息
       std::vector<unsigned char> msg;
       {
-        std::lock_guard<std::mutex> lock(rq_mtx);
-        auto it = std::find_if(recv_queue.begin(), recv_queue.end(),
-                               [&](const auto& p) { return p.first == uniqueID; });
+        std::lock_guard lock(rq_mtx);
+        auto it = std::find_if(recv_queue.begin(), recv_queue.end(), [&](const auto& p) { return p.first == uniqueID; });
         if (it != recv_queue.end()) {
           msg = std::move(it->second);
           recv_queue.erase(it);
@@ -91,7 +89,7 @@ void registCb(const std::string& uniqueID, int timeoutSeconds, SendCb cb) {
 
       // 模拟消费
       {
-        std::lock_guard<std::mutex> lock_cb(cb_mtx);
+        std::lock_guard lock_cb(cb_mtx);
         if (cb_map.contains(uniqueID)) {
           cb_map[uniqueID](uniqueID, msg);
           cb_map.erase(uniqueID);
@@ -100,7 +98,7 @@ void registCb(const std::string& uniqueID, int timeoutSeconds, SendCb cb) {
     }
 
     {
-      std::lock_guard<std::mutex> lock(cv_mtx);
+      std::lock_guard lock(cv_mtx);
       cv_map.erase(uniqueID);
     }
   }).detach();
