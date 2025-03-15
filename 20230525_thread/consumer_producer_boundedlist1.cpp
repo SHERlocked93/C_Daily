@@ -1,14 +1,30 @@
-// ÓĞ½çÉú²úÕßÏû·ÑÕß¶ÓÁĞ
-// Created by Ç®êÅ on 2025/2/19.
+// æœ‰ç•Œç”Ÿäº§è€…æ¶ˆè´¹è€…é˜Ÿåˆ—
+// Created by é’±æ˜± on 2025/2/19.
 //
 #include <chrono>
 #include <condition_variable>
 #include <iostream>
 #include <list>
+#include <random>
 #include <ranges>
 #include <thread>
 
 using namespace std::literals;
+
+class MyTaskPayload {
+ public:
+  MyTaskPayload(std::vector<unsigned char> m_payload) : m_payload(std::move(m_payload)) { m_id++; }
+
+  //! get result
+  //! @return result from connection
+  std::vector<unsigned char>&& getRes() { return std::move(m_res); }
+
+ private:
+  static int m_id;
+  std::vector<unsigned char> m_payload;
+  std::vector<unsigned char> m_res;
+};
+int MyTaskPayload::m_id = 0;
 
 template <typename T>
 class MyBoundedList {
@@ -25,41 +41,50 @@ class MyBoundedList {
   T get() {
     std::unique_lock lock(m_mutex);
     m_notEmpty.wait(lock, [this] { return m_list.size(); });
-    auto item = m_list.front();
+    auto item = std::move(m_list.front());
     m_list.pop_front();
 
     m_notFull.notify_all();
-    return item;
+    return std::move(item);
   }
 
  private:
-  int m_sizeLimit;      // ¶ÓÁĞÈİÁ¿
-  std::mutex m_mutex;   // »¥³âËø
-  std::list<T> m_list;  // ¶ÓÁĞ
+  int m_sizeLimit;      // é˜Ÿåˆ—å®¹é‡
+  std::mutex m_mutex;   // äº’æ–¥é”
+  std::list<T> m_list;  // é˜Ÿåˆ—
 
-  std::condition_variable m_notFull;   // ·Ç¿ÕÌõ¼ş±äÁ¿
-  std::condition_variable m_notEmpty;  // ·ÇÂúÌõ¼ş±äÁ¿
+  std::condition_variable m_notFull;   // éç©ºæ¡ä»¶å˜é‡
+  std::condition_variable m_notEmpty;  // éæ»¡æ¡ä»¶å˜é‡
 };
 
+constexpr unsigned char STX = 0xAA;
+constexpr unsigned char EDL = 0xDD;
+std::vector<unsigned char> geneRandomData() {
+  static std::random_device rd;
+  static std::mt19937 gen(rd());
+  std::uniform_int_distribution<unsigned char> dis(0, 0xFF);
+  return {STX, dis(gen), dis(gen), dis(gen), EDL};
+}
+
 int main() {
-  MyBoundedList<int> ListTest(10);
+  MyBoundedList<MyTaskPayload> ListTest(10);
 
   std::thread producer1([&ListTest] {
-    for (auto i : std::views::iota(0, 100)) {
+    for (auto i : std::views::iota(0, 100) | std::views::transform([](int) { return geneRandomData(); })) {
       std::this_thread::sleep_for(5ms);
-      ListTest.put(std::move(i));
+      ListTest.put(i);
 
-      std::cout << "producer1 id:" << std::this_thread::get_id() << " ->put: " << i << std::endl;
+      std::cout << "producer1 id:" << std::this_thread::get_id() << " ->put: " << i[0] << std::endl;
     }
   });
-  std::thread producer2([&ListTest] {
-    for (auto i : std::views::iota(0, 100)) {
-      std::this_thread::sleep_for(5ms);
-      ListTest.put(std::move(i));
-
-      std::cout << "producer2 id:" << std::this_thread::get_id() << " ->put: " << i << std::endl;
-    }
-  });
+  // std::thread producer2([&ListTest] {
+  //   for (auto i : std::views::iota(0, 100) | std::views::transform([](int) { return geneRandomData(); })) {
+  //     std::this_thread::sleep_for(5ms);
+  //     ListTest.put(MyTaskPayload(i));
+  //
+  //     std::cout << "producer2 id:" << std::this_thread::get_id() << " ->put: " << i << std::endl;
+  //   }
+  // });
 
   std::thread consumer1([&ListTest] {
     for (auto i : std::views::iota(0, 500)) {
@@ -68,17 +93,17 @@ int main() {
       std::cout << " = consumer1 id:" << std::this_thread::get_id() << " ->get: " << ListTest.get() << std::endl;
     }
   });
-  std::thread consumer2([&ListTest] {
-    for (auto i : std::views::iota(0, 500)) {
-      std::this_thread::sleep_for(200ms);
-
-      std::cout << " = consumer2 id:" << std::this_thread::get_id() << " ->get: " << ListTest.get() << std::endl;
-    }
-  });
+  // std::thread consumer2([&ListTest] {
+  //   for (auto i : std::views::iota(0, 500)) {
+  //     std::this_thread::sleep_for(200ms);
+  //
+  //     std::cout << " = consumer2 id:" << std::this_thread::get_id() << " ->get: " << ListTest.get() << std::endl;
+  //   }
+  // });
 
   producer1.join();
-  producer2.join();
+  // producer2.join();
   consumer1.join();
-  consumer2.join();
+  // consumer2.join();
   return 0;
 }
