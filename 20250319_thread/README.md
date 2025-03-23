@@ -4,6 +4,16 @@
 
 线程对象只可移动，不能复制
 
+## 线程的状态
+
+1. 初始化(Init)：该线程正在被创建。 
+2. 就绪(Ready)：该线程在就绪列表中，等待CPU调度。 
+3. 运行(Running)：该线程正在运行。 
+4. 阻塞(Blocked)：该线程被阻塞挂起。Blocked状态包括：pend(锁、事件、信号量等阻塞)、 suspend(主动pend)、delay(延时阻塞)、pendtime(因为锁、事件、信号量时间等超时等待)。 
+5. 退出(Exit)：该线程运行结束，等待父线程回收其控制块资源。
+
+![](https://raw.githubusercontent.com/SHERlocked93/pic/master/picgo/202503202118081.png)
+
 ## 条件变量
 
 错过信号

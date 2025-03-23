@@ -16,7 +16,7 @@ class MyTaskPayload {
   MyTaskPayload(std::vector<unsigned char> m_payload) : m_payload(std::move(m_payload)) { m_id++; }
 
   //! get result
-  //! @return result from connection
+  //! \return result from connection
   std::vector<unsigned char>&& getRes() { return std::move(m_res); }
 
  private:
@@ -35,7 +35,7 @@ class MyBoundedList {
     std::unique_lock lock(m_mutex);
     m_notFull.wait(lock, [this] { return m_list.size() <= m_sizeLimit; });
     m_list.emplace_back(t);
-    m_notEmpty.notify_all();
+    m_notEmpty.notify_one();
   }
 
   T get() {
@@ -44,7 +44,7 @@ class MyBoundedList {
     auto item = std::move(m_list.front());
     m_list.pop_front();
 
-    m_notFull.notify_all();
+    m_notFull.notify_one();
     return std::move(item);
   }
 
@@ -77,29 +77,29 @@ int main() {
       std::cout << "producer1 id:" << std::this_thread::get_id() << " ->put: " << i[0] << std::endl;
     }
   });
-  // std::thread producer2([&ListTest] {
-  //   for (auto i : std::views::iota(0, 100) | std::views::transform([](int) { return geneRandomData(); })) {
-  //     std::this_thread::sleep_for(5ms);
-  //     ListTest.put(MyTaskPayload(i));
-  //
-  //     std::cout << "producer2 id:" << std::this_thread::get_id() << " ->put: " << i << std::endl;
-  //   }
-  // });
+   std::thread producer2([&ListTest] {
+     for (auto i : std::views::iota(0, 100) | std::views::transform([](int) { return geneRandomData(); })) {
+       std::this_thread::sleep_for(5ms);
+          ListTest.put(i);
+
+          std::cout << "producer1 id:" << std::this_thread::get_id() << " ->put: " << (int)i[1] << std::endl;
+     }
+   });
 
   std::thread consumer1([&ListTest] {
     for (auto i : std::views::iota(0, 500)) {
       std::this_thread::sleep_for(100ms);
 
-      std::cout << " = consumer1 id:" << std::this_thread::get_id() << " ->get: " << ListTest.get() << std::endl;
+      std::cout << " = consumer1 id:" << std::this_thread::get_id() << " ->get: " << ListTest.get().getRes().size() << std::endl;
     }
   });
-  // std::thread consumer2([&ListTest] {
-  //   for (auto i : std::views::iota(0, 500)) {
-  //     std::this_thread::sleep_for(200ms);
-  //
-  //     std::cout << " = consumer2 id:" << std::this_thread::get_id() << " ->get: " << ListTest.get() << std::endl;
-  //   }
-  // });
+   std::thread consumer2([&ListTest] {
+     for (auto i : std::views::iota(0, 500)) {
+       std::this_thread::sleep_for(200ms);
+
+       std::cout << " = consumer2 id:" << std::this_thread::get_id() << " ->get: " << ListTest.get().getRes().size() << std::endl;
+     }
+   });
 
   producer1.join();
   // producer2.join();

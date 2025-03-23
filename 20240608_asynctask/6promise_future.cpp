@@ -2,7 +2,10 @@
 #include <future>
 #include <iostream>
 #include <string>
+#include <chrono>
 #include <thread>
+
+using std::chrono_literals;
 
 int main() {
   // 创建 promise 和 future
@@ -20,7 +23,7 @@ int main() {
 
   // 等待结果
   std::cout << "Waiting for the result..." << std::endl;
-  int result = resultFuture.get();  // 这会阻塞，直到结果可用
+  int result = resultFuture.wait_for(2000ms);  // 这会阻塞，直到结果可用
   std::cout << "Result: " << result << std::endl;
 
   // 等待线程完成
