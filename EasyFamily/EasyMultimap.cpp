@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace common_util {
+
 template <typename... Types>
 class EasyMultimap {
  public:
@@ -98,7 +98,7 @@ class EasyMultimap {
       return std::to_string(value);
   }
 };
-}  // namespace common_util
+
 
 // Test cases
 int main() {

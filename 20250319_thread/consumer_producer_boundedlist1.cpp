@@ -27,9 +27,9 @@ class MyTaskPayload {
 int MyTaskPayload::m_id = 0;
 
 template <typename T>
-class MyBoundedList {
+class EasyBoundedList {
  public:
-  explicit MyBoundedList(const int size) : m_sizeLimit(size) {}
+  explicit EasyBoundedList(const int size) : m_sizeLimit(size) {}
 
   void put(T&& t) {
     std::unique_lock lock(m_mutex);
@@ -67,7 +67,7 @@ std::vector<unsigned char> geneRandomData() {
 }
 
 int main() {
-  MyBoundedList<MyTaskPayload> ListTest(10);
+  EasyBoundedList<MyTaskPayload> ListTest(10);
 
   std::thread producer1([&ListTest] {
     for (auto i : std::views::iota(0, 100) | std::views::transform([](int) { return geneRandomData(); })) {
