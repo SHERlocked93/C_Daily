@@ -48,8 +48,8 @@ inline std::string toStrPure(unsigned char *pos, int size_, int &idx_) {
 /// ex:
 ///   containsInVals(3, {1, 2, 3}) returns true
 ///   containsInVals(4, {1, 2, 3}) returns false
-template <typename T>
-bool containsInVals(const T &val, const std::initializer_list<T> &vals) {
+template <typename T, typename Container>
+bool containsInVals(const T &val, const Container &vals) {
   for (const auto &v : vals) {
     if (val == v) return true;
   }
@@ -57,10 +57,8 @@ bool containsInVals(const T &val, const std::initializer_list<T> &vals) {
 }
 
 template <typename T>
-bool containsInVals(const T &val, const std::vector<T> &vals) {
-  for (const auto &v : vals)
-    if (val == v) return true;
-  return false;
+bool containsInVals(const T &val, std::initializer_list<T> vals) {
+  return containsInVals<T, std::initializer_list<T>>(val, vals);
 }
 
 // Get the value of the pos-th byte of val

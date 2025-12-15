@@ -55,6 +55,10 @@ void test_other_utils() {
   assert(containsInVals(3, {1, 2, 3}));
   assert(!containsInVals(4, {1, 2, 3}));
 
+  std::vector<int> vec_vals = {1, 2, 3};
+  assert(containsInVals(3, vec_vals));
+  assert(!containsInVals(4, vec_vals));
+
   // str2vec / vec2str
   std::string csv = "1,2,3,4";
   std::vector<int> vec = str2vec<int>(csv);
