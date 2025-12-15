@@ -1,17 +1,14 @@
-//
-// Created by qiany on 2025/3/23.
-//
 #pragma once
 
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <type_traits>
 
+namespace common_util {
 template <typename MSG_TYPE>
 class BoundedQueue {
-public:
+ public:
   explicit BoundedQueue(size_t capacity) : capacity_(capacity) {}
 
   bool push(std::unique_ptr<MSG_TYPE> message) {
@@ -45,7 +42,7 @@ public:
     return queue_.size();
   }
 
-private:
+ private:
   const size_t capacity_;
   std::queue<std::unique_ptr<MSG_TYPE>> queue_;
   mutable std::mutex mutex_;
@@ -53,3 +50,5 @@ private:
   std::condition_variable not_empty_;
   std::condition_variable not_full_;
 };
+
+}  // namespace common_util

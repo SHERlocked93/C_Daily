@@ -1,69 +1,59 @@
 #include "EasyStrConvert.h"
 
-#include <Windows.h>
-
+#include <algorithm>
 #include <codecvt>
+#include <cstring>
 #include <locale>
+#include <vector>
 
-std::wstring EasyStrConvert::to_wstring(const std::string& s) {
-  int length = MultiByteToWideChar(CP_ACP, 0, s.c_str(), s.size(), nullptr, 0);
-  if (length == 0) {
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <iconv.h>
+#endif
+
+namespace common_util {
+
+std::wstring to_wstring(const std::string& s) {
+  if (s.empty()) {
     return L"";
   }
-  auto* wide_buffer = new wchar_t[length]{0};
-  MultiByteToWideChar(CP_ACP, 0, s.c_str(), s.size(), wide_buffer, length);
 
-  std::wstring ret(wide_buffer, wide_buffer + length);
-  delete[] wide_buffer;
-  return ret;
+  try {
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.from_bytes(s);
+  } catch (...) {
+    return L"";
+  }
 }
-std::string EasyStrConvert::wto_string(const std::wstring& ws) {
-  int length = WideCharToMultiByte(CP_ACP, 0, ws.c_str(), ws.size(), nullptr, 0, nullptr, nullptr);
-  if (length == 0) {
+
+std::string wto_string(const std::wstring& ws) {
+  if (ws.empty()) {
     return "";
   }
-  auto* multi_buffer = new char[length]{0};
-  WideCharToMultiByte(CP_ACP, 0, ws.c_str(), ws.size(), multi_buffer, length, nullptr, nullptr);
 
-  std::string ret(multi_buffer, multi_buffer + length);
-  delete[] multi_buffer;
-  return ret;
-}
-
-std::string EasyStrConvert::w2c(const wchar_t* src) {
-  if (src) {
-    // Convert to a char*
-    size_t dstSizeInBytes = wcslen(src) * sizeof(wchar_t) + 1;
-    size_t convertedChars = 0;
-    char* dst = new char[dstSizeInBytes];
-    _locale_t locale = _create_locale(LC_ALL, ".936");
-    _wcstombs_s_l(&convertedChars  // size_t			*_PtNumOfCharConverted,
-                  ,
-                  dst  // char *			_Dst,
-                  ,
-                  dstSizeInBytes  // size_t			_DstSizeInBytes,
-                  ,
-                  src  // const wchar_t		*src,
-                  ,
-                  _TRUNCATE  // size_t			_MaxCountInBytes
-                  ,
-                  locale  //_locale_t _Locale
-    );
-    _free_locale(locale);
-
-    std::string reVal = std::string(dst);
-    delete[] dst;
-    return reVal;
-  } else {
-    return std::string("");
+  try {
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.to_bytes(ws);
+  } catch (...) {
+    return "";
   }
 }
 
-std::wstring EasyStrConvert::c2w(const char* src) {
+std::string w2c(const wchar_t* src) {
+  if (!src) {
+    return "";
+  }
+
+  return wto_string(std::wstring(src));
+}
+
+std::wstring c2w(const char* src) {
   if (!src) {
     return std::wstring(L"");
   }
 
+#ifdef _WIN32
   int srcLen = static_cast<int>(strlen(src));
   int dstSizeInWords = MultiByteToWideChar(CP_ACP, 0, src, srcLen, NULL, 0);
 
@@ -75,69 +65,136 @@ std::wstring EasyStrConvert::c2w(const char* src) {
   MultiByteToWideChar(CP_ACP, 0, src, srcLen, &reVal[0], dstSizeInWords);
 
   return reVal;
-  //if (src) {
-  //  size_t dstSizeInWords = strlen(src) + 1;
-  //  size_t convertedChars = 0;
-  //  wchar_t* dst = new wchar_t[dstSizeInWords];
-  //  // mbstowcs_s(&convertedChars, dst, dstSizeInWords, src,dstSizeInWords);
-  //  _locale_t locale = _create_locale(LC_ALL, ".936");
-  //  _mbstowcs_s_l(&convertedChars, dst, dstSizeInWords, src, dstSizeInWords, locale);
-  //  _free_locale(locale);
-  //  std::wstring reVal = std::wstring(dst);
-  //  delete[] dst;
-  //  return reVal;
-  //} else {
-  //  return std::wstring(L"");
-  //}
+#else
+  return to_wstring(std::string(src));
+#endif
 }
 
-std::string EasyStrConvert::GbkToUtf8(std::string src_str) {
-  int len = MultiByteToWideChar(CP_ACP, 0, src_str.c_str(), -1, NULL, 0);
-  wchar_t* wstr = new wchar_t[len + 1];
-  memset(wstr, 0, len + 1);
-  MultiByteToWideChar(CP_ACP, 0, src_str.c_str(), -1, wstr, len);
-  len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
-  char* str = new char[len + 1];
-  memset(str, 0, len + 1);
-  WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, len, NULL, NULL);
-  std::string strTemp = str;
-  if (wstr) delete[] wstr;
-  if (str) delete[] str;
-  return strTemp;
+std::string UnicodeToUTF8(const std::wstring& wstr) {
+  // Use std::wstring_convert to convert wchar_t to UTF-8 encoded std::string
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> wcv;
+  try {
+    std::string ret = wcv.to_bytes(wstr);
+    // Remove any \u0000
+    ret.erase(std::remove(ret.begin(), ret.end(), '\0'), ret.end());
+    return ret;
+  } catch (...) {
+    return "";
+  }
 }
 
-std::string EasyStrConvert::Utf8ToGbk(std::string src_str) {
-  int len = MultiByteToWideChar(CP_UTF8, 0, src_str.c_str(), -1, NULL, 0);
-  wchar_t* wszGBK = new wchar_t[len + 1];
-  memset(wszGBK, 0, len * 2 + 2);
-  MultiByteToWideChar(CP_UTF8, 0, src_str.c_str(), -1, wszGBK, len);
-  len = WideCharToMultiByte(CP_ACP, 0, wszGBK, -1, NULL, 0, NULL, NULL);
-  char* szGBK = new char[len + 1];
-  memset(szGBK, 0, len + 1);
-  WideCharToMultiByte(CP_ACP, 0, wszGBK, -1, szGBK, len, NULL, NULL);
-  std::string strTemp(szGBK);
-  if (wszGBK) delete[] wszGBK;
-  if (szGBK) delete[] szGBK;
-  return strTemp;
-}
-
-std::string EasyStrConvert::UnicodeToUTF8(const std::wstring& wstr) {
-  // ʹ�� std::wstring_convert �� wchar_t ת��Ϊ UTF-8 ����� std::string
-  std::wstring_convert<std::codecvt_utf8<wchar_t> > wcv;
-  std::string ret = wcv.to_bytes(wstr);
-
-  // �Ƴ������ \u0000
-  ret.erase(std::remove(ret.begin(), ret.end(), '\0'), ret.end());
-
-  return ret;
-}
-
-std::wstring EasyStrConvert::UTF8ToUnicode(const std::string& str) {
+std::wstring UTF8ToUnicode(const std::string& str) {
   std::wstring ret;
-
-  std::wstring_convert<std::codecvt_utf8<wchar_t> > wcv;
-  ret = wcv.from_bytes(str);
-
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> wcv;
+  try {
+    ret = wcv.from_bytes(str);
+  } catch (...) {
+    return L"";
+  }
   return ret;
 }
 
+std::string GbkToUtf8(std::string src_str) {
+  if (src_str.empty()) {
+    return "";
+  }
+
+#ifdef _WIN32
+  // Windows 平台使用 Windows API
+  int len = MultiByteToWideChar(CP_ACP, 0, src_str.c_str(), -1, NULL, 0);
+  if (len <= 0) return "";
+
+  std::vector<wchar_t> wstr(len);
+  MultiByteToWideChar(CP_ACP, 0, src_str.c_str(), -1, wstr.data(), len);
+
+  len = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), -1, NULL, 0, NULL, NULL);
+  if (len <= 0) {
+    return "";
+  }
+
+  std::vector<char> strTemp(len);
+  WideCharToMultiByte(CP_UTF8, 0, wstr.data(), -1, strTemp.data(), len, NULL, NULL);
+
+  // Remove null terminator if present in the count, though std::string handles it
+  if (len > 0 && strTemp[len - 1] == '\0') {
+    return std::string(strTemp.data());
+  }
+  return std::string(strTemp.data(), len);
+
+#else
+  // Linux/Unix 平台使用 iconv
+  iconv_t cd = iconv_open("UTF-8", "GBK");
+  if (cd == (iconv_t)-1) {
+    return src_str;  // 转换失败，返回原字符串
+  }
+
+  size_t inlen = src_str.length();
+  size_t outlen = inlen * 4;  // UTF-8 最多需要 4 倍空间
+
+  std::vector<char> outbuf(outlen);
+  char* inbuf = const_cast<char*>(src_str.c_str());
+  char* outptr = outbuf.data();
+
+  if (iconv(cd, &inbuf, &inlen, &outptr, &outlen) == (size_t)-1) {
+    iconv_close(cd);
+    return src_str;
+  }
+
+  std::string result(outbuf.data());
+  iconv_close(cd);
+  return result;
+#endif
+}
+
+std::string Utf8ToGbk(std::string src_str) {
+  if (src_str.empty()) {
+    return "";
+  }
+
+#ifdef _WIN32
+  // Windows 平台使用 Windows API
+  int len = MultiByteToWideChar(CP_UTF8, 0, src_str.c_str(), -1, NULL, 0);
+  if (len <= 0) return "";
+
+  std::vector<wchar_t> wszGBK(len);
+  MultiByteToWideChar(CP_UTF8, 0, src_str.c_str(), -1, wszGBK.data(), len);
+
+  len = WideCharToMultiByte(CP_ACP, 0, wszGBK.data(), -1, NULL, 0, NULL, NULL);
+  if (len <= 0) {
+    return "";
+  }
+
+  std::vector<char> szGBK(len);
+  WideCharToMultiByte(CP_ACP, 0, wszGBK.data(), -1, szGBK.data(), len, NULL, NULL);
+
+  if (len > 0 && szGBK[len - 1] == '\0') {
+    return std::string(szGBK.data());
+  }
+  return std::string(szGBK.data(), len);
+
+#else
+  // Linux/Unix 平台使用 iconv
+  iconv_t cd = iconv_open("GBK", "UTF-8");
+  if (cd == (iconv_t)-1) {
+    return src_str;  // 转换失败，返回原字符串
+  }
+
+  size_t inlen = src_str.length();
+  size_t outlen = inlen * 2;  // GBK 最多需要 2 倍空间
+
+  std::vector<char> outbuf(outlen);
+  char* inbuf = const_cast<char*>(src_str.c_str());
+  char* outptr = outbuf.data();
+
+  if (iconv(cd, &inbuf, &inlen, &outptr, &outlen) == (size_t)-1) {
+    iconv_close(cd);
+    return src_str;
+  }
+
+  std::string result(outbuf.data());
+  iconv_close(cd);
+  return result;
+#endif
+}
+
+} // namespace common_util

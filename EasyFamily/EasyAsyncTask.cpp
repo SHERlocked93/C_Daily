@@ -1,6 +1,6 @@
 #include "EasyAsyncTask.h"
 
-using namespace thread_task;
+using namespace common_util;
 
 EasyAsyncTask* EasyAsyncTask::setWorkLoad(const TaskWorkLoad& workLoad) {
   task_work_load_ = workLoad;
@@ -88,7 +88,7 @@ void EasyAsyncTask::privateRunner(EasyAsyncTask* t,
             break;
           }
 
-          // ³¬Ê±¼ì²â
+          // Timeout check
           if (timeout_duration_ > std::chrono::microseconds(0) &&
               std::chrono::system_clock::now() - start_time_ >
                   timeout_duration_) {

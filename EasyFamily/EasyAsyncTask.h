@@ -1,6 +1,6 @@
 #pragma once
-// 改进方向：
-// 1. 合并简单定时任务到一个线程中
+// Improvement suggestions:
+// 1. Merge simple timer and general thread pool
 #include <atomic>
 #include <chrono>
 #include <functional>
@@ -9,47 +9,45 @@
 #include <string>
 #include <thread>
 
+namespace common_util {
 
-namespace thread_task {
 class EasyAsyncTask;
 class TaskWorkArgsBase {
  public:
-  explicit TaskWorkArgsBase(int interval_millseconds = 0)
-      : interval_millseconds_(interval_millseconds) {}
+  explicit TaskWorkArgsBase(int interval_millseconds = 0) : interval_millseconds_(interval_millseconds) {}
   virtual ~TaskWorkArgsBase() = default;
   TaskWorkArgsBase(const TaskWorkArgsBase&) = default;
   TaskWorkArgsBase& operator=(const TaskWorkArgsBase&) = default;
 
-  int interval_millseconds_{0};  // 任务间隔时间 0表示单次任务 ms
+  int interval_millseconds_{0};  // Loop interval 0 means no loop, unit: ms
 };
 
 class TaskResultBase {
  public:
-  int retVal_ = -1;   // 0成功 -2超时 其他失败
-  std::string desp_;  // 结果描述
+  int retVal_ = -1;   // 0: success, -2: timeout, others: failure
+  std::string desp_;  // Result description
   virtual ~TaskResultBase() = default;
 };
 
 class TaskProcessBase {
  public:
-  int process_ = 0;      // 0开始 大于等于100完成
-  std::string message_;  // 进度消息
+  int process_ = 0;      // 0: start, ongoing until 100: complete
+  std::string message_;  // Progress message
   virtual ~TaskProcessBase() = default;
 };
 
-// 任务取消类型
+// Task cancellation type
 enum class TaskCancelType : int {
-  TIMEOUT,  // 超时取消
-  MANUAL,   // 手动取消
+  TIMEOUT,  // Timeout cancellation
+  MANUAL,   // Manual cancellation
 };
 
-using TaskWorkLoad = std::function<std::shared_ptr<TaskResultBase>(
-    EasyAsyncTask*, std::shared_ptr<TaskWorkArgsBase>)>;
+using TaskWorkLoad = std::function<std::shared_ptr<TaskResultBase>(EasyAsyncTask*, std::shared_ptr<TaskWorkArgsBase>)>;
 using TaskProcessHandler = std::function<void(TaskProcessBase&)>;
 using TaskDoneHandler = std::function<void(std::shared_ptr<TaskResultBase>&)>;
 using TaskCancelHandler = std::function<void(EasyAsyncTask*, TaskCancelType)>;
 
-class  EasyAsyncTask {
+class EasyAsyncTask {
  public:
   EasyAsyncTask() = default;
   ~EasyAsyncTask() {
@@ -57,60 +55,58 @@ class  EasyAsyncTask {
     wait();
   }
 
-  //! 设置任务
+  /// Set workload
   EasyAsyncTask* setWorkLoad(const TaskWorkLoad& workLoad);
 
-  //! 设置任务完成回调
+  /// Set task done callback
   EasyAsyncTask* setTaskDoneHandler(const TaskDoneHandler& dHandler);
-  //! 设置任务进度回调
+  /// Set process callback
   EasyAsyncTask* setProcessHandler(const TaskProcessHandler& pHandler);
-  //! 设置任务取消回调
+  /// Set cancellation callback
   EasyAsyncTask* setCancelHandler(const TaskCancelHandler& pHandler);
 
-  //! 启动异步任务
-  //! \param args 时间间隔
+  /// Run async task
+  /// \param args Task arguments
   EasyAsyncTask* runAsync(const std::shared_ptr<TaskWorkArgsBase>& args);
-  //! 设置超时时间 单位ms
+  /// Set timeout duration, unit: ms
   EasyAsyncTask* setTimeoutDuration(int timeout_duration_ms_);
 
   int cancel();
   void wait() const;
 
-  //! 获取任务结果
+  /// Get result
   std::shared_ptr<TaskResultBase> getResult();
-  //! 上报任务进度
+  /// Report progress
   void reportProcess(TaskProcessBase& process) const;
-  //! 获取是否取消
+  /// Check if cancellation is requested
   bool isCancellationRequested() const;
 
  private:
-  TaskWorkLoad task_work_load_ = nullptr;            // 任务
-  TaskProcessHandler process_reporter_ = nullptr;    // 进度回调
-  TaskDoneHandler task_done_handler_ = nullptr;      // 完成回调
-  TaskCancelHandler task_cancel_handler_ = nullptr;  // 取消回调，只循环任务有
+  TaskWorkLoad task_work_load_ = nullptr;            // Task workload
+  TaskProcessHandler process_reporter_ = nullptr;    // Progress callback
+  TaskDoneHandler task_done_handler_ = nullptr;      // Done callback
+  TaskCancelHandler task_cancel_handler_ = nullptr;  // Cancellation callback, only cyclic tasks available
 
-  bool is_work_load_bind_ = false;            // 是否绑定任务
-  bool is_process_reporter_bind_ = false;     // 是否绑定进度回调
-  bool is_task_done_handler_bind_ = false;    // 是否绑定完成回调
-  bool is_task_cancel_handler_bind_ = false;  // 是否绑定取消回调
+  bool is_work_load_bind_ = false;            // Whether workload is bound
+  bool is_process_reporter_bind_ = false;     // Whether progress callback is bound
+  bool is_task_done_handler_bind_ = false;    // Whether done callback is bound
+  bool is_task_cancel_handler_bind_ = false;  // Whether cancellation callback is bound
 
-  std::shared_ptr<TaskResultBase> result_obj_;  // 任务结果
-  std::shared_ptr<std::thread> thread_;         // 任务线程
-  std::shared_ptr<TaskWorkArgsBase> args_{};    // 存储任务参数
+  std::shared_ptr<TaskResultBase> result_obj_;  // Result object
+  std::shared_ptr<std::thread> thread_;         // Working thread
+  std::shared_ptr<TaskWorkArgsBase> args_{};    // Store task arguments
 
-  //! 启任务线程
-  void privateRunner(EasyAsyncTask* t,
-                     const std::shared_ptr<TaskWorkArgsBase>& args);
+  /// Working thread
+  void privateRunner(EasyAsyncTask* t, const std::shared_ptr<TaskWorkArgsBase>& args);
 
   // std::condition_variable cv_;
   std::mutex mutex_;
   std::atomic<int> cancel_pending_{0};
   std::atomic<int> is_working_{0};
   std::atomic<bool> is_waiting_{false};
-  std::chrono::time_point<std::chrono::system_clock> start_time_;  // 开始时间
-  std::chrono::milliseconds timeout_duration_;  // 超时时间 ms 0为不超时
+  std::chrono::time_point<std::chrono::system_clock> start_time_;  // Start time
+  std::chrono::milliseconds timeout_duration_;                     // Timeout duration ms, 0 means no timeout
 
-  const std::chrono::milliseconds timeout_check_duration_ =
-      std::chrono::milliseconds(20);  // 超时检查间隔 ms
+  const std::chrono::milliseconds timeout_check_duration_ = std::chrono::milliseconds(20);  // Timeout check interval ms
 };
 }  // namespace thread_task

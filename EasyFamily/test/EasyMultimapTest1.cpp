@@ -29,13 +29,12 @@ int main() {
     auto res1 = em1.getVal<0, 1>(2);
     std::cout << "Found: " << res1 << std::endl;
 
-    // 获取第1列（std::string 类型）
     auto column1 = em1.getColumn<1>();
     std::cout << "Column 1 (strings): ";
     for (const auto& val : column1) {
       std::cout << val << " ";
     }
-    std::cout << std::endl;  // 输出: hello world yyy
+    std::cout << std::endl;  // export: hello world yyy
 
   } catch (const std::exception& e) {
     std::cerr << "Error: " << e.what() << std::endl;

@@ -11,10 +11,8 @@ mutex output_lock;
 
 void func(const char* name) {
   this_thread::sleep_for(100ms);
-  lock_guard<mutex> guard{
-      output_lock};
-  cout << "I am thread " << name
-      << '\n';
+  lock_guard<mutex> guard{output_lock};
+  cout << "I am thread " << name << '\n';
 }
 
 int main() {

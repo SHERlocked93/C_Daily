@@ -1,0 +1,16 @@
+
+# Link against the main library
+add_executable(EasyStrConvertTest1 EasyStrConvertTest1.cpp)
+target_link_libraries(EasyStrConvertTest1 PRIVATE EasyFamily)
+
+add_executable(EasyFinallyTest1 EasyFinallyTest1.cpp)
+target_link_libraries(EasyFinallyTest1 PRIVATE EasyFamily)
+
+add_executable(EasyEnumTest1 EasyEnumTest1.cpp)
+target_link_libraries(EasyEnumTest1 PRIVATE EasyFamily)
+
+add_executable(EasyBoundedListTest1 EasyBoundedListTest1.cpp)
+target_link_libraries(EasyBoundedListTest1 PRIVATE EasyFamily)
+
+add_executable(EasyMyObserverTest1 EasyMyObserverTest1.cpp)
+target_link_libraries(EasyMyObserverTest1 PRIVATE EasyFamily)

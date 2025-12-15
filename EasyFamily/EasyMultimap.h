@@ -1,4 +1,5 @@
 #pragma once
+
 #include <algorithm>
 #include <optional>
 #include <stdexcept>
@@ -8,6 +9,7 @@
 #include <vector>
 
 namespace common_util {
+
 template <typename... Types>
 class EasyMultimap {
  public:
@@ -35,38 +37,38 @@ class EasyMultimap {
     return *this;
   }
 
-  //! add a tuple without uniqueness check, allow duplicate
-  //! \param elem tuple elem
-  //! \return *this
+  /// add a tuple without uniqueness check, allow duplicate
+  /// \param elem tuple elem
+  /// \return *this
   EasyMultimap& insertWithoutCheck(const TupleType& elem) {
     maptuples_.push_back(elem);
     return *this;
   }
 
   EasyMultimap& mergeWithoutCheck(const EasyMultimap& r) {
-    for (const auto& elem : r.maptuples_) insertWithoutCheck(elem);  // 修复：应该调用insertWithoutCheck
+    for (const auto& elem : r.maptuples_) insertWithoutCheck(elem);  // Modified to call insertWithoutCheck
     return *this;
   }
 
-  //! get value of column ToIndex based on value of column FromIndex
-  //! \tparam FromIndex idx of in param
-  //! \tparam ToIndex idx of target tuple item
-  //! \tparam ValueType type of in param
-  //! \param fromValue value of in param
-  //! \return first match
+  /// get value of column ToIndex based on value of column FromIndex
+  /// \tparam FromIndex idx of in param
+  /// \tparam ToIndex idx of target tuple item
+  /// \tparam ValueType type of in param
+  /// \param fromValue value of in param
+  /// \return first match
   template <size_t FromIndex, size_t ToIndex, typename ValueType>
   std::tuple_element_t<ToIndex, TupleType> getVal(const ValueType& fromValue) const {
     auto it = std::find_if(maptuples_.begin(), maptuples_.end(), [&](const auto& elem) {
-      // 修复1：使用更通用的比较方式，支持枚举类型
+      // Modification 1: Use more general comparison method to support enum types
       return isEqual(std::get<FromIndex>(elem), fromValue);
     });
     if (it != maptuples_.end()) return std::get<ToIndex>(*it);
     throw std::runtime_error("Value not found");
   }
 
-  //! get all items of N-th column
-  //! \tparam N The index of column to retrieve
-  //! \return all items N-th column
+  /// get all items of N-th column
+  /// \tparam N The index of column to retrieve
+  /// \return all items N-th column
   template <size_t N>
   std::vector<std::tuple_element_t<N, TupleType>> getColumn() const {
     std::vector<std::tuple_element_t<N, TupleType>> column;
@@ -80,25 +82,17 @@ class EasyMultimap {
  private:
   VectorType maptuples_;
 
-  // 添加通用的相等性比较函数
   template <typename T, typename U>
   static bool isEqual(const T& a, const U& b) {
-    // 如果类型相同，直接比较
     if constexpr (std::is_same_v<T, U>) {
       return a == b;
-    }
-    // 如果都是枚举类型，转换为底层类型比较
-    else if constexpr (std::is_enum_v<T> && std::is_enum_v<U>) {
+    } else if constexpr (std::is_enum_v<T> && std::is_enum_v<U>) {
       return static_cast<std::underlying_type_t<T>>(a) == static_cast<std::underlying_type_t<U>>(b);
-    }
-    // 如果一个是枚举，一个是整数
-    else if constexpr (std::is_enum_v<T> && std::is_integral_v<U>) {
+    } else if constexpr (std::is_enum_v<T> && std::is_integral_v<U>) {
       return static_cast<std::underlying_type_t<T>>(a) == b;
     } else if constexpr (std::is_integral_v<T> && std::is_enum_v<U>) {
       return a == static_cast<std::underlying_type_t<U>>(b);
-    }
-    // 其他情况直接比较（可能需要类型转换）
-    else {
+    } else {
       return a == b;
     }
   }
@@ -111,7 +105,7 @@ class EasyMultimap {
     for (const auto& elem : initList) {
       bool hasDuplicate = false;
       // iterate over tuple items
-      // 修复3：使用apply的正确方式
+      // Modification 3: Use apply for proper formatting
       applyToTuple(elem, uniqueColumns, hasDuplicate);
 
       if (hasDuplicate) throw std::runtime_error("Duplicate value found in one of tuple's columns!");
@@ -123,13 +117,13 @@ class EasyMultimap {
   void addTuplesWithFirstCheck(std::initializer_list<TupleType> initList) {
     std::unordered_set<std::string> uniqueFirstColumn;
 
-    // 检查现有数据的第一列
+    // Collect first column of existing data
     for (const auto& existingElem : maptuples_) {
       uniqueFirstColumn.insert(toString(std::get<0>(existingElem)));
     }
 
     for (const auto& elem : initList) {
-      // 只检查第一列是否重复
+      // Check only if first column has duplicates
       std::string firstValue = toString(std::get<0>(elem));
       if (!uniqueFirstColumn.insert(firstValue).second) {
         throw std::runtime_error("Duplicate value found in first column!");
@@ -151,14 +145,15 @@ class EasyMultimap {
     if constexpr (std::is_same_v<T, std::string>) {
       return value;
     } else if constexpr (std::is_enum_v<T>) {
-      // 对于枚举类型，转换为底层类型
+      // For enum type, convert to underlying type
       return std::to_string(static_cast<std::underlying_type_t<T>>(value));
     } else if constexpr (std::is_arithmetic_v<T>) {
       return std::to_string(value);
     } else {
-      // 对于其他类型，尝试转换为int（可能需要根据实际情况调整）
+      // For other types, try converting to int, may need to adjust based on actual situation
       return std::to_string(static_cast<int>(value));
     }
   }
 };
+
 }  // namespace common_util

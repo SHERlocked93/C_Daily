@@ -5,15 +5,15 @@
 #include <stdexcept>
 #include <vector>
 
-
-//! 一个简单的枚举类
-//! \tparam keyT 键类型
-//! \tparam valT 值类型
+namespace common_util {
+/// A simple enumeration utility
+/// \tparam keyT Key type
+/// \tparam valT Value type
 template <class keyT, class valT>
 class EasyEnum {
  public:
   EasyEnum() = default;
-  //! 构造函数接受 initializer_list
+  /// Constructor using initializer_list
   EasyEnum(std::initializer_list<std::pair<keyT, valT>> initList) {
     for (const auto& item : initList) {
       myEnum_.emplace(item);
@@ -28,7 +28,7 @@ class EasyEnum {
   }
   ~EasyEnum() = default;
 
-  //! 获取特定键的值
+  /// Get value for specific key
   valT get(const keyT& key) const {
     auto it = myEnum_.find(key);
     if (it != myEnum_.end()) {
@@ -37,7 +37,7 @@ class EasyEnum {
     throw std::runtime_error("Key not found");
   }
 
-  //! 获取特定值的键
+  /// Get key for specific value
   keyT getKeyOf(const valT& val) const {
     for (const auto& pair : myEnum_) {
       if (pair.second == val) {
@@ -47,10 +47,10 @@ class EasyEnum {
     throw std::runtime_error("Value not found");
   }
 
-  // 重载 operator[]
+  /// Overload operator[]
   valT operator[](const keyT& key) const { return get(key); }
 
-  //! 获取所有键的 vector
+  /// Get all keys as vector
   std::vector<keyT> getKeys() const {
     std::vector<keyT> keys;
     for (const auto& [first, second] : myEnum_) {
@@ -59,7 +59,7 @@ class EasyEnum {
     return keys;
   }
 
-  //! 获取所有值的 vector
+  /// Get all values as vector
   std::vector<valT> getVals() const {
     std::vector<valT> vals;
     for (const auto& [first, second] : myEnum_) {
@@ -93,3 +93,5 @@ keyT getKeyFromEnum(EasyEnum<keyT, valT> easyEnum_, valT val_) {
   if (easyEnum_.hasVal(val_)) return easyEnum_.getKeyOf(val_);
   return keyT{};
 }
+
+}  // namespace common_util
